@@ -1,6 +1,5 @@
 package com.example.voicenotes.network
 
-import com.example.voicenotes.BuildConfig
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -10,21 +9,17 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
 /**
- * Синглтон для создания и настройки сетевого клиента Gemini API.
+ * Синглтон для создания и настройки сетевых клиентов.
  */
 object NetworkModule {
 
-    private const val BASE_URL = "https://generativelanguage.googleapis.com/"
-
-    /**
-     * API ключ из BuildConfig.
-     */
-    val apiKey: String = BuildConfig.GEMINI_API_KEY
+    private const val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/"
+    private const val OPENAI_BASE_URL = "https://api.openai.com/"
 
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
-        encodeDefaults = false
+        encodeDefaults = true
     }
 
     /**
@@ -48,12 +43,24 @@ object NetworkModule {
     /**
      * Экземпляр GeminiApi для выполнения запросов.
      */
-    val api: GeminiApi by lazy {
+    val geminiApi: GeminiApi by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(GEMINI_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(GeminiApi::class.java)
+    }
+
+    /**
+     * Экземпляр OpenAiApi для выполнения запросов.
+     */
+    val openAiApi: OpenAiApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(OPENAI_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(OpenAiApi::class.java)
     }
 }

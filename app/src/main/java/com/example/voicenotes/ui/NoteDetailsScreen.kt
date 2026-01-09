@@ -35,9 +35,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.voicenotes.NoteUi
+import com.example.voicenotes.R
 
 /**
  * Экран деталей заметки.
@@ -60,12 +62,12 @@ fun NoteDetailsScreen(
     if (showEditDialog) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Изменить заголовок") },
+            title = { Text(stringResource(R.string.edit_title_dialog_title)) },
             text = {
                 OutlinedTextField(
                     value = editedTitle,
                     onValueChange = { editedTitle = it },
-                    label = { Text("Заголовок") },
+                    label = { Text(stringResource(R.string.edit_title_dialog_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -77,12 +79,12 @@ fun NoteDetailsScreen(
                         showEditDialog = false
                     }
                 ) {
-                    Text("Сохранить")
+                    Text(stringResource(R.string.edit_title_dialog_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.edit_title_dialog_cancel))
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -103,7 +105,7 @@ fun NoteDetailsScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
+                            contentDescription = stringResource(R.string.note_details_back)
                         )
                     }
                 },
@@ -112,7 +114,7 @@ fun NoteDetailsScreen(
                     IconButton(onClick = { showEditDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Редактировать",
+                            contentDescription = stringResource(R.string.note_details_edit),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -150,7 +152,7 @@ fun NoteDetailsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Транскрипция",
+                            text = stringResource(R.string.note_details_transcription),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -179,7 +181,7 @@ fun NoteDetailsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Саммари",
+                            text = stringResource(R.string.note_details_summary),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.secondary
                         )

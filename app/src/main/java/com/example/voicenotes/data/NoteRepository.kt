@@ -1,25 +1,32 @@
 package com.example.voicenotes.data
 
 import android.util.Base64
-import com.example.voicenotes.network.NetworkModule
-import com.example.voicenotes.network.model.GeminiContent
-import com.example.voicenotes.network.model.GeminiPart
-import com.example.voicenotes.network.model.GeminiRequest
-import com.example.voicenotes.network.model.InlineData
+import com.example.voicenotes.ai.AiProvider
+import com.example.voicenotes.ai.AiResponse
+import com.example.voicenotes.ai.GeminiAiService
+import com.example.voicenotes.ai.MissingApiKeyException
+import com.example.voicenotes.ai.OpenAiService
 import kotlinx.coroutines.flow.Flow
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Репозиторий для работы с голосовыми заметками.
- * Инкапсулирует логику взаимодействия с Gemini API и Room базой данных.
+ * Инкапсулирует логику взаимодействия с AI сервисами и Room базой данных.
+ * 
+ * Поддерживает несколько AI провайдеров (Gemini, OpenAI) с выбором в runtime.
  * 
  * Магия: когда мы сохраняем заметку через DAO, база автоматически "пнет"
  * всех подписчиков getAllNotes() через Flow — UI обновится сам!
  */
-class NoteRepository(private val noteDao: NoteDao) {
-
-    private val api = NetworkModule.api
-    private val apiKey = NetworkModule.apiKey
+@Singleton
+class NoteRepository @Inject constructor(
+    private val noteDao: NoteDao,
+    private val geminiService: GeminiAiService,
+    private val openAiService: OpenAiService,
+    private val userPreferences: UserPreferencesRepository
+) {
 
     /**
      * Получить все заметки из базы данных.
@@ -45,18 +52,30 @@ class NoteRepository(private val noteDao: NoteDao) {
     /**
      * Обрабатывает голосовую заметку: транскрибирует, создаёт саммари и сохраняет в базу.
      * 
-     * ВАЖНО: Мы не возвращаем данные в UI вручную!
-     * База сама "пнет" ViewModel через Flow после сохранения.
+     * Использует выбранного AI провайдера из настроек пользователя.
      * 
      * @param audioFile Аудио файл для обработки
+     * @throws MissingApiKeyException Если API ключ не настроен
      * @throws Exception При ошибке API
      */
     suspend fun processVoiceNote(audioFile: File) {
-        // 1. Читаем файл и конвертируем в base64
+        // 1. Получаем настройки пользователя
+        val prefs = userPreferences.getPreferences()
+        val apiKey = when (prefs.selectedProvider) {
+            AiProvider.GEMINI -> prefs.geminiApiKey
+            AiProvider.OPENAI -> prefs.openaiApiKey
+        }
+        
+        // 2. Проверяем наличие ключа
+        if (apiKey.isBlank()) {
+            throw MissingApiKeyException(prefs.selectedProvider)
+        }
+        
+        // 3. Читаем файл и конвертируем в base64
         val audioBytes = audioFile.readBytes()
         val audioBase64 = Base64.encodeToString(audioBytes, Base64.NO_WRAP)
         
-        // 2. Определяем MIME тип по расширению
+        // 4. Определяем MIME тип по расширению
         val mimeType = when (audioFile.extension.lowercase()) {
             "mp3" -> "audio/mp3"
             "m4a" -> "audio/mp4"
@@ -66,16 +85,34 @@ class NoteRepository(private val noteDao: NoteDao) {
             else -> "audio/mpeg"
         }
         
-        // 3. Транскрибируем аудио
-        val rawText = transcribeAudio(audioBase64, mimeType)
+        // 5. Анализируем через выбранный AI сервис
+        val aiResult = when (prefs.selectedProvider) {
+            AiProvider.GEMINI -> {
+                // Gemini поддерживает аудио напрямую (multimodal)
+                geminiService.analyzeAudio(audioBase64, mimeType, apiKey)
+            }
+            AiProvider.OPENAI -> {
+                // OpenAI не поддерживает аудио в chat completions
+                // Используем Gemini для транскрипции, а OpenAI для саммари
+                val geminiApiKey = prefs.geminiApiKey
+                if (geminiApiKey.isBlank()) {
+                    // Если нет Gemini ключа — используем только OpenAI
+                    // (транскрипция будет недоступна, передаём пустой текст)
+                    throw Exception("OpenAI requires Gemini API key for audio transcription. Please configure both keys.")
+                }
+                
+                // Транскрибируем через Gemini
+                val transcription = geminiService.analyzeAudio(audioBase64, mimeType, geminiApiKey)
+                
+                // Генерируем заголовок и саммари через OpenAI
+                openAiService.generateTitleAndSummary(transcription.rawText, apiKey)
+            }
+        }
         
-        // 4. Генерируем заголовок и саммари (JSON)
-        val aiResult = generateTitleAndSummary(rawText)
-        
-        // 5. Собираем Entity и сохраняем в базу
+        // 6. Собираем Entity и сохраняем в базу
         val note = NoteEntity(
             title = aiResult.title,
-            rawText = rawText,
+            rawText = aiResult.rawText,
             summary = aiResult.summary,
             audioPath = audioFile.absolutePath
         )
@@ -83,110 +120,5 @@ class NoteRepository(private val noteDao: NoteDao) {
         
         // Возвращать ничего не нужно — база сама уведомит UI через Flow!
     }
-
-
-    /**
-     * Транскрибирует аудио в текст через Gemini API.
-     */
-    private suspend fun transcribeAudio(audioBase64: String, mimeType: String): String {
-        val request = GeminiRequest(
-            contents = listOf(
-                GeminiContent(
-                    parts = listOf(
-                        GeminiPart(
-                            text = """
-                                Transcribe this audio to text accurately.
-                                Return ONLY the transcription, nothing else.
-                                Keep the original language of the audio.
-                            """.trimIndent()
-                        ),
-                        GeminiPart(
-                            inlineData = InlineData(
-                                mimeType = mimeType,
-                                data = audioBase64
-                            )
-                        )
-                    )
-                )
-            )
-        )
-        
-        val response = api.generateContent(apiKey, request)
-        
-        return response.candidates?.firstOrNull()
-            ?.content?.parts?.firstOrNull()?.text
-            ?: throw Exception("Failed to transcribe audio: empty response")
-    }
-
-    /**
-     * Результат генерации от AI.
-     */
-    data class AiSummaryResult(
-        val title: String,
-        val summary: String
-    )
-
-    /**
-     * Генерирует заголовок и саммари через Gemini API.
-     * Возвращает структурированный JSON вместо markdown-текста.
-     */
-    private suspend fun generateTitleAndSummary(text: String): AiSummaryResult {
-        val systemPrompt = """
-            Ты — помощник для обработки голосовых заметок.
-            Твоя задача — извлечь смысл из текста.
-            
-            Верни ответ СТРОГО в формате JSON БЕЗ markdown разметки:
-            {"title": "Короткий заголовок (максимум 4-5 слов)", "summary": "Краткая выжимка (2-3 предложения, без буллитов и звездочек)"}
-            
-            ВАЖНО:
-            - Не используй жирный шрифт, звездочки ** или спецсимволы
-            - Не используй markdown форматирование
-            - Не добавляй пояснения — только JSON
-            - Язык ответа: тот же, что и входной текст
-        """.trimIndent()
-        
-        val request = GeminiRequest(
-            contents = listOf(
-                GeminiContent(
-                    parts = listOf(
-                        GeminiPart(text = "$systemPrompt\n\n---\n\nТекст для обработки:\n$text")
-                    )
-                )
-            )
-        )
-        
-        val response = api.generateContent(apiKey, request)
-        
-        val jsonText = response.candidates?.firstOrNull()
-            ?.content?.parts?.firstOrNull()?.text
-            ?: throw Exception("Failed to generate summary: empty response")
-        
-        // Парсим JSON ответ
-        return parseAiResponse(jsonText)
-    }
-
-    /**
-     * Парсит JSON ответ от AI.
-     */
-    private fun parseAiResponse(jsonText: String): AiSummaryResult {
-        return try {
-            // Чистим от возможных markdown-обёрток ```json ... ```
-            val cleanJson = jsonText
-                .replace("```json", "")
-                .replace("```", "")
-                .trim()
-            
-            val jsonObject = org.json.JSONObject(cleanJson)
-            AiSummaryResult(
-                title = jsonObject.optString("title", "Заметка"),
-                summary = jsonObject.optString("summary", cleanJson)
-            )
-        } catch (e: Exception) {
-            // Если парсинг не удался — используем текст как есть
-            AiSummaryResult(
-                title = "Заметка",
-                summary = jsonText.take(200)
-            )
-        }
-    }
 }
+

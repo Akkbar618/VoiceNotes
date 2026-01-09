@@ -8,4 +8,5 @@ sealed class Screen(val route: String) {
     object NoteDetails : Screen("note_details/{noteId}") {
         fun createRoute(noteId: Long) = "note_details/$noteId"
     }
+    object Settings : Screen("settings")
 }

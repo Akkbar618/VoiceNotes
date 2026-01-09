@@ -1,9 +1,9 @@
 package com.example.voicenotes
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -17,7 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,21 +25,21 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.voicenotes.navigation.Screen
 import com.example.voicenotes.ui.NoteDetailsScreen
+import com.example.voicenotes.ui.SettingsScreen
 import com.example.voicenotes.ui.theme.VoiceNotesTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val app = application as App
-        val viewModelFactory = NotesViewModelFactory(app.repository)
 
         enableEdgeToEdge()
         setContent {
             VoiceNotesTheme {
                 val navController = rememberNavController()
-                val notesViewModel: NotesViewModel = viewModel(factory = viewModelFactory)
+                val notesViewModel: NotesViewModel = hiltViewModel()
 
                 // Фон чтобы не было белой вспышки при переходах
                 Surface(
@@ -83,6 +83,9 @@ class MainActivity : ComponentActivity() {
                                 cacheDir = cacheDir,
                                 onNoteClick = { noteId ->
                                     navController.navigate(Screen.NoteDetails.createRoute(noteId))
+                                },
+                                onSettingsClick = {
+                                    navController.navigate(Screen.Settings.route)
                                 }
                             )
                         }
@@ -118,6 +121,13 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                        }
+                        
+                        // Экран настроек
+                        composable(Screen.Settings.route) {
+                            SettingsScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
                         }
                     }
                 }

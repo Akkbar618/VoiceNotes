@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Голосовые заметки</string>
+    
+    <!-- Notes List Screen -->
+    <string name="notes_list_title">Мои заметки</string>
+    <string name="notes_list_empty_title">Нет заметок</string>
+    <string name="notes_list_empty_subtitle">Нажмите кнопку записи, чтобы создать\nпервую голосовую заметку</string>
+    <string name="notes_list_fab_record">Запись</string>
+    <string name="notes_list_fab_stop">Стоп</string>
+    <string name="notes_list_processing">Обрабатываю запись…</string>
+    <string name="notes_list_delete">Удалить</string>
+    
+    <!-- Note Details Screen -->
+    <string name="note_details_transcription">Транскрипция</string>
+    <string name="note_details_summary">Саммари</string>
+    <string name="note_details_back">Назад</string>
+    <string name="note_details_edit">Редактировать</string>
+    
+    <!-- Edit Title Dialog -->
+    <string name="edit_title_dialog_title">Изменить заголовок</string>
+    <string name="edit_title_dialog_label">Заголовок</string>
+    <string name="edit_title_dialog_save">Сохранить</string>
+    <string name="edit_title_dialog_cancel">Отмена</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_section_ai">AI Провайдер</string>
+    <string name="settings_section_app">Приложение</string>
+    <string name="settings_provider_title">Провайдер</string>
+    <string name="settings_provider_gemini">Google Gemini</string>
+    <string name="settings_provider_openai">OpenAI (GPT-4o-mini)</string>
+    <string name="settings_api_key_gemini">Gemini API Ключ</string>
+    <string name="settings_api_key_openai">OpenAI API Ключ</string>
+    <string name="settings_api_key_not_set">Не настроен</string>
+    <string name="settings_language_title">Язык</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+    
+    <!-- Errors -->
+    <string name="error_delete">Ошибка удаления: %1$s</string>
+    <string name="error_update">Ошибка обновления: %1$s</string>
+    <string name="error_recording_start">Не удалось начать запись</string>
+    <string name="error_recording_stop">Не удалось остановить запись</string>
+    <string name="error_processing">Ошибка обработки: %1$s</string>
+    <string name="error_network">Нет подключения к интернету</string>
+    
+    <!-- Common -->
+    <string name="common_cancel">Отмена</string>
+    <string name="common_save">Сохранить</string>
+    <string name="common_delete">Удалить</string>
+</resources>

@@ -3,11 +3,11 @@ package com.example.voicenotes
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.voicenotes.data.NoteEntity
 import com.example.voicenotes.data.NoteRepository
 import com.example.voicenotes.util.DateFormatter
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.net.UnknownHostException
+import javax.inject.Inject
 
 /**
  * UI модель заметки для отображения в списке.
@@ -48,7 +49,8 @@ data class NotesUiState(
  * - Когда Репозиторий сохранит заметку, база сама "пнет" нас через Flow
  * - UI обновится автоматически без ручного добавления в список
  */
-class NotesViewModel(private val repository: NoteRepository) : ViewModel() {
+@HiltViewModel
+class NotesViewModel @Inject constructor(private val repository: NoteRepository) : ViewModel() {
 
     private var audioRecorder: AudioRecorder? = null
 
@@ -206,18 +208,5 @@ class NotesViewModel(private val repository: NoteRepository) : ViewModel() {
 
     companion object {
         private const val TAG = "NotesViewModel"
-    }
-}
-
-/**
- * Factory для создания ViewModel с зависимостями.
- */
-class NotesViewModelFactory(private val repository: NoteRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(NotesViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return NotesViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

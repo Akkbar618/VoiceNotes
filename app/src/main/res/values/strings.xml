@@ -1,3 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App -->
     <string name="app_name">VoiceNotes</string>
+    
+    <!-- Notes List Screen -->
+    <string name="notes_list_title">My Notes</string>
+    <string name="notes_list_empty_title">No notes</string>
+    <string name="notes_list_empty_subtitle">Tap the record button to create\nyour first voice note</string>
+    <string name="notes_list_fab_record">Record</string>
+    <string name="notes_list_fab_stop">Stop</string>
+    <string name="notes_list_processing">Processing recording…</string>
+    <string name="notes_list_delete">Delete</string>
+    
+    <!-- Note Details Screen -->
+    <string name="note_details_transcription">Transcription</string>
+    <string name="note_details_summary">Summary</string>
+    <string name="note_details_back">Back</string>
+    <string name="note_details_edit">Edit</string>
+    
+    <!-- Edit Title Dialog -->
+    <string name="edit_title_dialog_title">Edit title</string>
+    <string name="edit_title_dialog_label">Title</string>
+    <string name="edit_title_dialog_save">Save</string>
+    <string name="edit_title_dialog_cancel">Cancel</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_ai">AI Provider</string>
+    <string name="settings_section_app">Application</string>
+    <string name="settings_provider_title">Provider</string>
+    <string name="settings_provider_gemini">Google Gemini</string>
+    <string name="settings_provider_openai">OpenAI (GPT-4o-mini)</string>
+    <string name="settings_api_key_gemini">Gemini API Key</string>
+    <string name="settings_api_key_openai">OpenAI API Key</string>
+    <string name="settings_api_key_not_set">Not configured</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+    
+    <!-- Errors -->
+    <string name="error_delete">Delete error: %1$s</string>
+    <string name="error_update">Update error: %1$s</string>
+    <string name="error_recording_start">Failed to start recording</string>
+    <string name="error_recording_stop">Failed to stop recording</string>
+    <string name="error_processing">Processing error: %1$s</string>
+    <string name="error_network">No internet connection</string>
+    
+    <!-- Common -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="common_delete">Delete</string>
 </resources>

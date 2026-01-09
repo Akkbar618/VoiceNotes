@@ -21,12 +21,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -190,7 +193,7 @@ fun EmptyState() {
             Spacer(modifier = Modifier.height(24.dp))
             
             Text(
-                text = "Нет заметок",
+                text = stringResource(R.string.notes_list_empty_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -198,7 +201,7 @@ fun EmptyState() {
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Нажмите кнопку записи, чтобы создать\nпервую голосовую заметку",
+                text = stringResource(R.string.notes_list_empty_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.Gray,
                 textAlign = TextAlign.Center
@@ -212,7 +215,8 @@ fun EmptyState() {
 fun NotesListScreen(
     viewModel: NotesViewModel,
     cacheDir: File,
-    onNoteClick: (Long) -> Unit
+    onNoteClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -268,9 +272,18 @@ fun NotesListScreen(
                 LargeTopAppBar(
                     title = {
                         Text(
-                            text = "Мои заметки",
+                            text = stringResource(R.string.notes_list_title),
                             style = MaterialTheme.typography.headlineLarge
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = stringResource(R.string.settings_title),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.largeTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
@@ -294,7 +307,9 @@ fun NotesListScreen(
                     ) {
                         Icon(
                             imageVector = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                            contentDescription = if (uiState.isRecording) "Стоп" else "Запись",
+                            contentDescription = stringResource(
+                                if (uiState.isRecording) R.string.notes_list_fab_stop else R.string.notes_list_fab_record
+                            ),
                             modifier = Modifier.size(36.dp)
                         )
                     }
@@ -347,7 +362,7 @@ fun NotesListScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "Обрабатываю запись...",
+                        text = stringResource(R.string.notes_list_processing),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
