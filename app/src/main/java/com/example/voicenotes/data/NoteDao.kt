@@ -35,4 +35,10 @@ interface NoteDao {
      */
     @Query("DELETE FROM notes WHERE id = :noteId")
     suspend fun deleteNote(noteId: Long)
+    
+    /**
+     * Обновить заголовок заметки.
+     */
+    @Query("UPDATE notes SET title = :newTitle WHERE id = :noteId")
+    suspend fun updateNoteTitle(noteId: Long, newTitle: String)
 }

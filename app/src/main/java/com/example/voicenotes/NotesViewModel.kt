@@ -92,6 +92,21 @@ class NotesViewModel(private val repository: NoteRepository) : ViewModel() {
     }
 
     /**
+     * Обновить заголовок заметки.
+     */
+    fun updateNoteTitle(noteId: Long, newTitle: String) {
+        viewModelScope.launch {
+            try {
+                repository.updateNoteTitle(noteId, newTitle)
+                Log.d(TAG, "Note title updated: $noteId -> $newTitle")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update note title", e)
+                _uiState.update { it.copy(error = "Ошибка обновления: ${e.message}") }
+            }
+        }
+    }
+
+    /**
      * Начинает запись аудио.
      */
     fun startRecording(context: Context, cacheDir: File) {

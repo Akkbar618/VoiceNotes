@@ -26,8 +26,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeFloatingActionButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -36,6 +37,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -107,6 +109,7 @@ fun NoteListCard(
 
 /**
  * Swipe-to-Delete обёртка для карточки.
+ * Фон — сплошной прямоугольник без закруглений.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,10 +133,10 @@ fun SwipeableNoteCard(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            // Красный фон с иконкой удаления
+            // Сплошной прямоугольный фон (ErrorContainer для MD3)
             val color by animateColorAsState(
                 when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
                     else -> Color.Transparent
                 },
                 label = "swipe_color"
@@ -141,15 +144,15 @@ fun SwipeableNoteCard(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color)
-                    .padding(end = 24.dp),
+                    .background(color), // Без закруглений!
                 contentAlignment = Alignment.CenterEnd
             ) {
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Удалить",
-                        tint = Color.White
+                        modifier = Modifier.padding(end = 24.dp),
+                        tint = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
             }
@@ -204,6 +207,7 @@ fun EmptyState() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesListScreen(
     viewModel: NotesViewModel,
@@ -259,19 +263,39 @@ fun NotesListScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                // Large Top App Bar с заголовком "Мои заметки"
+                LargeTopAppBar(
+                    title = {
+                        Text(
+                            text = "Мои заметки",
+                            style = MaterialTheme.typography.headlineLarge
+                        )
+                    },
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                )
+            },
             floatingActionButton = {
                 if (!uiState.isLoading) {
-                    FloatingActionButton(
+                    // Large FAB для обоих режимов (96dp)
+                    LargeFloatingActionButton(
                         onClick = { onRecordClick() },
                         containerColor = if (uiState.isRecording) 
-                            MaterialTheme.colorScheme.error 
+                            MaterialTheme.colorScheme.errorContainer 
                         else 
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (uiState.isRecording)
+                            MaterialTheme.colorScheme.onErrorContainer
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer
                     ) {
                         Icon(
                             imageVector = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
                             contentDescription = if (uiState.isRecording) "Стоп" else "Запись",
-                            tint = Color.White
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                 }
@@ -303,26 +327,29 @@ fun NotesListScreen(
             }
         }
 
-        // Оверлей загрузки
+        // Оверлей загрузки с MD3 индикатором
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f)),
+                    .background(Color.Black.copy(alpha = 0.6f)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // MD3 CircularProgressIndicator (крупный, толстый)
                     CircularProgressIndicator(
-                        modifier = Modifier.size(64.dp),
-                        color = MaterialTheme.colorScheme.primary
+                        modifier = Modifier.size(80.dp),
+                        strokeWidth = 6.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = "Обрабатываю запись...",
                         color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
             }

@@ -31,16 +31,16 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         val app = application as App
         val viewModelFactory = NotesViewModelFactory(app.repository)
-        
+
         enableEdgeToEdge()
         setContent {
             VoiceNotesTheme {
                 val navController = rememberNavController()
                 val notesViewModel: NotesViewModel = viewModel(factory = viewModelFactory)
-                
+
                 // Фон чтобы не было белой вспышки при переходах
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -76,41 +76,48 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     ) {
-                    // Экран списка заметок
-                    composable(Screen.NotesList.route) {
-                        NotesListScreen(
-                            viewModel = notesViewModel,
-                            cacheDir = cacheDir,
-                            onNoteClick = { noteId ->
-                                navController.navigate(Screen.NoteDetails.createRoute(noteId))
-                            }
-                        )
-                    }
-                    
-                    // Экран деталей заметки
-                    composable(
-                        route = Screen.NoteDetails.route,
-                        arguments = listOf(navArgument("noteId") { type = NavType.LongType })
-                    ) { backStackEntry ->
-                        val noteId = backStackEntry.arguments?.getLong("noteId") ?: return@composable
-                        val scope = rememberCoroutineScope()
-                        var note by remember { mutableStateOf<NoteUi?>(null) }
-                        
-                        LaunchedEffect(noteId) {
-                            note = notesViewModel.getNoteById(noteId)
-                        }
-                        
-                        note?.let { currentNote ->
-                            NoteDetailsScreen(
-                                note = currentNote,
-                                onBackClick = { navController.popBackStack() },
-                                onDeleteClick = {
-                                    scope.launch {
-                                        notesViewModel.deleteNote(noteId)
-                                        navController.popBackStack()
-                                    }
+                        // Экран списка заметок
+                        composable(Screen.NotesList.route) {
+                            NotesListScreen(
+                                viewModel = notesViewModel,
+                                cacheDir = cacheDir,
+                                onNoteClick = { noteId ->
+                                    navController.navigate(Screen.NoteDetails.createRoute(noteId))
                                 }
                             )
+                        }
+
+                        // Экран деталей заметки
+                        composable(
+                            route = Screen.NoteDetails.route,
+                            arguments = listOf(navArgument("noteId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val noteId =
+                                backStackEntry.arguments?.getLong("noteId") ?: return@composable
+                            val scope = rememberCoroutineScope()
+                            var note by remember { mutableStateOf<NoteUi?>(null) }
+
+                            LaunchedEffect(noteId) {
+                                note = notesViewModel.getNoteById(noteId)
+                            }
+
+                            note?.let { currentNote ->
+                                NoteDetailsScreen(
+                                    note = currentNote,
+                                    onBackClick = { navController.popBackStack() },
+                                    onDeleteClick = {
+                                        scope.launch {
+                                            notesViewModel.deleteNote(noteId)
+                                            navController.popBackStack()
+                                        }
+                                    },
+                                    onEditTitle = { newTitle ->
+                                        notesViewModel.updateNoteTitle(noteId, newTitle)
+                                        // Обновляем локальное состояние
+                                        note = currentNote.copy(title = newTitle)
+                                    }
+                                )
+                            }
                         }
                     }
                 }

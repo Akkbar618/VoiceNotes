@@ -38,6 +38,11 @@ class NoteRepository(private val noteDao: NoteDao) {
     suspend fun deleteNote(noteId: Long) = noteDao.deleteNote(noteId)
 
     /**
+     * Обновить заголовок заметки.
+     */
+    suspend fun updateNoteTitle(noteId: Long, newTitle: String) = noteDao.updateNoteTitle(noteId, newTitle)
+
+    /**
      * Обрабатывает голосовую заметку: транскрибирует, создаёт саммари и сохраняет в базу.
      * 
      * ВАЖНО: Мы не возвращаем данные в UI вручную!
