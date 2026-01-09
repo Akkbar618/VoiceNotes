@@ -24,10 +24,11 @@ import java.net.UnknownHostException
  */
 data class NoteUi(
     val id: Long,
+    val title: String,          // Заголовок от AI
     val rawText: String,
     val summary: String,
     val formattedDate: String,
-    val previewText: String  // Краткое превью для списка
+    val previewText: String     // Краткое превью для списка
 )
 
 /**
@@ -174,6 +175,7 @@ class NotesViewModel(private val repository: NoteRepository) : ViewModel() {
      */
     private fun NoteEntity.toUi() = NoteUi(
         id = id,
+        title = title,
         rawText = rawText,
         summary = summary,
         formattedDate = DateFormatter.formatTimestamp(timestamp),

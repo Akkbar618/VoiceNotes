@@ -10,8 +10,9 @@ import androidx.room.PrimaryKey
 data class NoteEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val rawText: String,           // Транскрипция (сырой текст)
-    val summary: String,           // Саммари от AI
-    val audioPath: String,         // Путь к аудио файлу
-    val timestamp: Long = System.currentTimeMillis()  // Для сортировки по дате
+    val title: String,              // Заголовок от AI (4-5 слов)
+    val rawText: String,            // Транскрипция (сырой текст)
+    val summary: String,            // Саммари от AI (2-3 предложения)
+    val audioPath: String,          // Путь к аудио файлу
+    val timestamp: Long = System.currentTimeMillis()
 )

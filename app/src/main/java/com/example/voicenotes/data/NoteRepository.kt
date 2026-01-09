@@ -64,19 +64,21 @@ class NoteRepository(private val noteDao: NoteDao) {
         // 3. Транскрибируем аудио
         val rawText = transcribeAudio(audioBase64, mimeType)
         
-        // 4. Генерируем саммари
-        val summary = generateSummary(rawText)
+        // 4. Генерируем заголовок и саммари (JSON)
+        val aiResult = generateTitleAndSummary(rawText)
         
         // 5. Собираем Entity и сохраняем в базу
         val note = NoteEntity(
+            title = aiResult.title,
             rawText = rawText,
-            summary = summary,
+            summary = aiResult.summary,
             audioPath = audioFile.absolutePath
         )
         noteDao.insertNote(note)
         
         // Возвращать ничего не нужно — база сама уведомит UI через Flow!
     }
+
 
     /**
      * Транскрибирует аудио в текст через Gemini API.
@@ -112,26 +114,30 @@ class NoteRepository(private val noteDao: NoteDao) {
     }
 
     /**
-     * Генерирует саммари текста через Gemini API.
+     * Результат генерации от AI.
      */
-    private suspend fun generateSummary(text: String): String {
+    data class AiSummaryResult(
+        val title: String,
+        val summary: String
+    )
+
+    /**
+     * Генерирует заголовок и саммари через Gemini API.
+     * Возвращает структурированный JSON вместо markdown-текста.
+     */
+    private suspend fun generateTitleAndSummary(text: String): AiSummaryResult {
         val systemPrompt = """
-            Ты — личный ассистент для обработки голосовых заметок.
+            Ты — помощник для обработки голосовых заметок.
+            Твоя задача — извлечь смысл из текста.
             
-            Твоя задача:
-            1. Выдели главные идеи и задачи из текста
-            2. Структурируй информацию в виде маркированного списка
-            3. Если есть конкретные задачи или дедлайны — выдели их отдельно
-            4. Будь краток, но не упускай важное
+            Верни ответ СТРОГО в формате JSON БЕЗ markdown разметки:
+            {"title": "Короткий заголовок (максимум 4-5 слов)", "summary": "Краткая выжимка (2-3 предложения, без буллитов и звездочек)"}
             
-            Язык ответа: тот же, что и входной текст.
-            
-            Формат ответа:
-            📌 **Главные идеи:**
-            • ...
-            
-            ✅ **Задачи:**
-            • ...
+            ВАЖНО:
+            - Не используй жирный шрифт, звездочки ** или спецсимволы
+            - Не используй markdown форматирование
+            - Не добавляй пояснения — только JSON
+            - Язык ответа: тот же, что и входной текст
         """.trimIndent()
         
         val request = GeminiRequest(
@@ -146,8 +152,36 @@ class NoteRepository(private val noteDao: NoteDao) {
         
         val response = api.generateContent(apiKey, request)
         
-        return response.candidates?.firstOrNull()
+        val jsonText = response.candidates?.firstOrNull()
             ?.content?.parts?.firstOrNull()?.text
             ?: throw Exception("Failed to generate summary: empty response")
+        
+        // Парсим JSON ответ
+        return parseAiResponse(jsonText)
+    }
+
+    /**
+     * Парсит JSON ответ от AI.
+     */
+    private fun parseAiResponse(jsonText: String): AiSummaryResult {
+        return try {
+            // Чистим от возможных markdown-обёрток ```json ... ```
+            val cleanJson = jsonText
+                .replace("```json", "")
+                .replace("```", "")
+                .trim()
+            
+            val jsonObject = org.json.JSONObject(cleanJson)
+            AiSummaryResult(
+                title = jsonObject.optString("title", "Заметка"),
+                summary = jsonObject.optString("summary", cleanJson)
+            )
+        } catch (e: Exception) {
+            // Если парсинг не удался — используем текст как есть
+            AiSummaryResult(
+                title = "Заметка",
+                summary = jsonText.take(200)
+            )
+        }
     }
 }

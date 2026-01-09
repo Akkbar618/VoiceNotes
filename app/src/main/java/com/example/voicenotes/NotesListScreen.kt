@@ -4,8 +4,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,17 +18,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,24 +46,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import java.io.File
 
 /**
  * Карточка заметки для отображения в списке.
- * Показывает только дату и краткое превью.
+ * Показывает заголовок (title), дату и краткое превью.
  */
 @Composable
 fun NoteListCard(
     note: NoteUi,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable(onClick = onClick),
@@ -62,6 +73,18 @@ fun NoteListCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // Заголовок (жирный)
+            Text(
+                text = note.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Дата
             Text(
                 text = note.formattedDate,
                 style = MaterialTheme.typography.labelSmall,
@@ -70,13 +93,72 @@ fun NoteListCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
+            // Превью (summary вместо rawText)
             Text(
-                text = note.previewText,
+                text = note.summary,
                 style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+/**
+ * Swipe-to-Delete обёртка для карточки.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableNoteCard(
+    note: NoteUi,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                onDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
+    
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            // Красный фон с иконкой удаления
+            val color by animateColorAsState(
+                when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
+                    else -> Color.Transparent
+                },
+                label = "swipe_color"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(end = 24.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Удалить",
+                        tint = Color.White
+                    )
+                }
+            }
+        },
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
+        modifier = modifier
+    ) {
+        NoteListCard(note = note, onClick = onClick)
     }
 }
 
@@ -94,10 +176,12 @@ fun EmptyState() {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Иконка микрофона (эмодзи)
-            Text(
-                text = "🎙️",
-                fontSize = 72.sp
+            // Иконка микрофона (Material Icons)
+            Icon(
+                imageVector = Icons.Default.Mic,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -111,7 +195,7 @@ fun EmptyState() {
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Нажмите REC, чтобы создать\nпервую голосовую заметку",
+                text = "Нажмите кнопку записи, чтобы создать\nпервую голосовую заметку",
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.Gray,
                 textAlign = TextAlign.Center
@@ -132,10 +216,13 @@ fun NotesListScreen(
     
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Показываем Snackbar при ошибке
+    // Показываем Snackbar при ошибке (Short duration)
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
-            snackbarHostState.showSnackbar(error)
+            snackbarHostState.showSnackbar(
+                message = error,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearError()
         }
     }
@@ -181,9 +268,10 @@ fun NotesListScreen(
                         else 
                             MaterialTheme.colorScheme.primary
                     ) {
-                        Text(
-                            text = if (uiState.isRecording) "⏹" else "🎤",
-                            fontSize = 24.sp
+                        Icon(
+                            imageVector = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                            contentDescription = if (uiState.isRecording) "Стоп" else "Запись",
+                            tint = Color.White
                         )
                     }
                 }
@@ -195,15 +283,20 @@ fun NotesListScreen(
                     EmptyState()
                 }
             } else {
-                // Список заметок
+                // Список заметок с анимациями
                 LazyColumn(
                     contentPadding = paddingValues,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(notes, key = { it.id }) { note ->
-                        NoteListCard(
+                    items(
+                        items = notes, 
+                        key = { it.id }
+                    ) { note ->
+                        SwipeableNoteCard(
                             note = note,
-                            onClick = { onNoteClick(note.id) }
+                            onClick = { onNoteClick(note.id) },
+                            onDelete = { viewModel.deleteNote(note.id) },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }
