@@ -1,5 +1,6 @@
 package com.example.voicenotes.network
 
+import com.example.voicenotes.BuildConfig
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -24,10 +25,16 @@ object NetworkModule {
 
     /**
      * Interceptor для логирования запросов и ответов.
+     * Включается только в debug сборке для безопасности.
      */
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
+
 
     /**
      * Настроенный OkHttpClient.

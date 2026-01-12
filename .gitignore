@@ -7,9 +7,28 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/appInsightsSettings.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/runConfigurations.xml
 .DS_Store
 /build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Kotlin
+.kotlin/
+
+# APK/AAB artifacts
+*.apk
+*.aab
+*.ap_
+
+# Signing configs
+*.jks
+*.keystore
+
+# VSCode
+.vscode/

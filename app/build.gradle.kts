@@ -7,16 +7,6 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-import java.util.Properties
-
-// Читаем API ключ из local.properties
-val localPropsFile = rootProject.file("local.properties")
-val localProps = Properties().apply {
-    if (localPropsFile.exists()) {
-        load(localPropsFile.inputStream())
-    }
-}
-
 android {
     namespace = "com.example.voicenotes"
     compileSdk = 35
@@ -29,9 +19,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "GEMINI_API_KEY", "\"${localProps.getProperty("GEMINI_API_KEY", "")}\"")
     }
+
 
     buildTypes {
         release {
