@@ -4,13 +4,13 @@ AI-powered voice notes app for Android. Record your thoughts, get instant transc
 
 ## Features
 
-- 🎤 **Voice Recording** — One-tap recording with visual feedback
-- 🤖 **AI Transcription** — Automatic speech-to-text conversion
-- 📝 **Smart Summaries** — AI-generated titles and summaries for each note
-- 🔄 **Multiple AI Providers** — Support for Google Gemini and OpenAI
-- 🔑 **BYOK** — Bring Your Own Key model (your API keys stay on your device)
-- 🌍 **Localization** — English and Russian languages
-- 🎨 **Material Design 3** — Modern, beautiful UI with dynamic theming
+- **Voice Recording** — One-tap recording with visual feedback
+- **AI Transcription** — Automatic speech-to-text conversion
+- **Smart Summaries** — AI-generated titles and summaries for each note
+- **Multiple AI Providers** — Support for Google Gemini and OpenAI
+- **BYOK** — Bring Your Own Key model (your API keys stay on your device)
+- **Localization** — English and Russian languages
+- **Material Design 3** — Modern, beautiful UI with dynamic theming
 
 ## Screenshots
 
