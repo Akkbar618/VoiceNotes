@@ -14,8 +14,11 @@ interface NoteDao {
     /**
      * Добавить новую заметку (suspend - тяжелая операция).
      */
+    /**
+     * Добавить новую заметку. Возвращает ID вставленной записи.
+     */
     @Insert
-    suspend fun insertNote(note: NoteEntity)
+    suspend fun insertNote(note: NoteEntity): Long
     
     /**
      * Получить все заметки, отсортированные по дате (новые первыми).
@@ -41,4 +44,16 @@ interface NoteDao {
      */
     @Query("UPDATE notes SET title = :newTitle WHERE id = :noteId")
     suspend fun updateNoteTitle(noteId: Long, newTitle: String)
+
+    /**
+     * Обновить статус заметки.
+     */
+    @Query("UPDATE notes SET status = :status WHERE id = :noteId")
+    suspend fun updateStatus(noteId: Long, status: NoteStatus)
+
+    /**
+     * Обновить содержимое заметки (заголовок, текст, саммари, статус).
+     */
+    @androidx.room.Update
+    suspend fun updateNote(note: NoteEntity)
 }

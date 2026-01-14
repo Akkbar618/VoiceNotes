@@ -26,11 +26,11 @@ class SettingsViewModel @Inject constructor(
     /**
      * Текущие настройки пользователя.
      */
-    val userPreferences: StateFlow<UserPreferences> = userPreferencesRepository.userPreferences
+    val userPreferences: StateFlow<UserPreferences?> = userPreferencesRepository.userPreferences
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = UserPreferences()
+            initialValue = null
         )
 
     /**
@@ -69,6 +69,15 @@ class SettingsViewModel @Inject constructor(
             _isSaving.value = true
             userPreferencesRepository.setSelectedProvider(provider)
             _isSaving.value = false
+        }
+    }
+
+    /**
+     * Завершить онбординг.
+     */
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            userPreferencesRepository.setOnboardingCompleted(true)
         }
     }
 }

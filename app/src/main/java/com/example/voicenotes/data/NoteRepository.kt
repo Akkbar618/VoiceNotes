@@ -58,25 +58,108 @@ class NoteRepository @Inject constructor(
      * @throws MissingApiKeyException Если API ключ не настроен
      * @throws Exception При ошибке API
      */
+    /**
+     * Обрабатывает голосовую заметку: транскрибирует, создаёт саммари и сохраняет в базу.
+     * Сохраняет черновик при ошибках сети.
+     */
+    /**
+     * Обрабатывает голосовую заметку: транскрибирует, создаёт саммари и сохраняет в базу.
+     * Сохраняет черновик при ошибках сети.
+     */
     suspend fun processVoiceNote(audioFile: File) {
-        // 1. Получаем настройки пользователя
-        val prefs = userPreferences.getPreferences()
-        val apiKey = when (prefs.selectedProvider) {
-            AiProvider.GEMINI -> prefs.geminiApiKey
-            AiProvider.OPENAI -> prefs.openaiApiKey
+        // 1. Создаем начальную запись в БД со статусом PROCESSING
+        val tempNote = NoteEntity(
+            title = "Processing...",
+            rawText = "",
+            summary = "",
+            audioPath = audioFile.absolutePath,
+            status = NoteStatus.PROCESSING
+        )
+        // Теперь insertNote возвращает ID
+        val noteId = noteDao.insertNote(tempNote)
+        
+        // 2. Запускаем процессинг
+        // Обертываем в try-catch, чтобы убедиться, что исключение доходит до VM для отображения,
+        // но при этом статус в БД уже обновлен внутри processNoteById.
+        processNoteById(noteId, audioFile)
+    }
+    
+    /**
+     * Повторить обработку заметки.
+     */
+    suspend fun retryNote(noteId: Long) {
+        val note = noteDao.getNoteById(noteId) ?: return
+        val audioFile = File(note.audioPath)
+        
+        if (!audioFile.exists()) {
+             noteDao.updateStatus(noteId, NoteStatus.FAILED)
+             throw Exception("Audio file not found")
         }
         
-        // 2. Проверяем наличие ключа
-        if (apiKey.isBlank()) {
-            throw MissingApiKeyException(prefs.selectedProvider)
+        // Обновляем статус на процессинг
+        noteDao.updateStatus(noteId, NoteStatus.PROCESSING)
+        
+        // Пытаемся обработать
+        processNoteById(noteId, audioFile)
+    }
+
+    /**
+     * Внутренняя логика обработки заметки по ID.
+     */
+    private suspend fun processNoteById(noteId: Long, audioFile: File) {
+        // Получаем свежую копию заметки
+        val currentNote = noteDao.getNoteById(noteId) ?: return
+
+        try {
+            // 1. Получаем настройки и ключ
+            val prefs = userPreferences.getPreferences()
+            val apiKey = when (prefs.selectedProvider) {
+                AiProvider.GEMINI -> prefs.geminiApiKey
+                AiProvider.OPENAI -> prefs.openaiApiKey
+            }
+            
+            if (apiKey.isBlank()) {
+                throw MissingApiKeyException(prefs.selectedProvider)
+            }
+            
+            // 2. Читаем и анализируем
+            val audioBytes = audioFile.readBytes()
+            val audioBase64 = Base64.encodeToString(audioBytes, Base64.NO_WRAP)
+            val mimeType = getMimeType(audioFile)
+            
+            val aiResult = when (prefs.selectedProvider) {
+                AiProvider.GEMINI -> geminiService.analyzeAudio(audioBase64, mimeType, apiKey)
+                AiProvider.OPENAI -> {
+                     val geminiApiKey = prefs.geminiApiKey
+                     if (geminiApiKey.isBlank()) throw Exception("OpenAI requires Gemini API key")
+                     
+                     val transcription = geminiService.analyzeAudio(audioBase64, mimeType, geminiApiKey)
+                     openAiService.generateTitleAndSummary(transcription.rawText, apiKey)
+                }
+            }
+            
+            // 3. Успех -> обновляем запись полностью
+            val updatedNote = currentNote.copy(
+                title = aiResult.title,
+                rawText = aiResult.rawText,
+                summary = aiResult.summary,
+                status = NoteStatus.SYNCED
+            )
+            noteDao.updateNote(updatedNote)
+            
+        } catch (e: java.io.IOException) {
+            // Ошибка сети -> DRAFT
+            noteDao.updateStatus(noteId, NoteStatus.DRAFT)
+            throw e
+        } catch (e: Exception) {
+            // Другая ошибка -> FAILED
+            noteDao.updateStatus(noteId, NoteStatus.FAILED)
+            throw e
         }
-        
-        // 3. Читаем файл и конвертируем в base64
-        val audioBytes = audioFile.readBytes()
-        val audioBase64 = Base64.encodeToString(audioBytes, Base64.NO_WRAP)
-        
-        // 4. Определяем MIME тип по расширению
-        val mimeType = when (audioFile.extension.lowercase()) {
+    }
+    
+    private fun getMimeType(file: File): String {
+        return when (file.extension.lowercase()) {
             "mp3" -> "audio/mp3"
             "m4a" -> "audio/mp4"
             "wav" -> "audio/wav"
@@ -84,41 +167,6 @@ class NoteRepository @Inject constructor(
             "ogg" -> "audio/ogg"
             else -> "audio/mpeg"
         }
-        
-        // 5. Анализируем через выбранный AI сервис
-        val aiResult = when (prefs.selectedProvider) {
-            AiProvider.GEMINI -> {
-                // Gemini поддерживает аудио напрямую (multimodal)
-                geminiService.analyzeAudio(audioBase64, mimeType, apiKey)
-            }
-            AiProvider.OPENAI -> {
-                // OpenAI не поддерживает аудио в chat completions
-                // Используем Gemini для транскрипции, а OpenAI для саммари
-                val geminiApiKey = prefs.geminiApiKey
-                if (geminiApiKey.isBlank()) {
-                    // Если нет Gemini ключа — используем только OpenAI
-                    // (транскрипция будет недоступна, передаём пустой текст)
-                    throw Exception("OpenAI requires Gemini API key for audio transcription. Please configure both keys.")
-                }
-                
-                // Транскрибируем через Gemini
-                val transcription = geminiService.analyzeAudio(audioBase64, mimeType, geminiApiKey)
-                
-                // Генерируем заголовок и саммари через OpenAI
-                openAiService.generateTitleAndSummary(transcription.rawText, apiKey)
-            }
-        }
-        
-        // 6. Собираем Entity и сохраняем в базу
-        val note = NoteEntity(
-            title = aiResult.title,
-            rawText = aiResult.rawText,
-            summary = aiResult.summary,
-            audioPath = audioFile.absolutePath
-        )
-        noteDao.insertNote(note)
-        
-        // Возвращать ничего не нужно — база сама уведомит UI через Flow!
     }
 }
 

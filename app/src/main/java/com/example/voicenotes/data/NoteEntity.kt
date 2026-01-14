@@ -14,5 +14,6 @@ data class NoteEntity(
     val rawText: String,            // Транскрипция (сырой текст)
     val summary: String,            // Саммари от AI (2-3 предложения)
     val audioPath: String,          // Путь к аудио файлу
+    val status: NoteStatus = NoteStatus.SYNCED, // Статус синхронизации
     val timestamp: Long = System.currentTimeMillis()
 )

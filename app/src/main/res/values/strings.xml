@@ -12,6 +12,12 @@
     <string name="notes_list_processing">Processing recording…</string>
     <string name="notes_list_delete">Delete</string>
     
+    <!-- Note Status -->
+    <string name="note_status_processing">Processing...</string>
+    <string name="note_status_draft">Draft (Saved locally)</string>
+    <string name="note_status_failed">Failed to process</string>
+    <string name="note_action_retry">Retry</string>
+    
     <!-- Note Details Screen -->
     <string name="note_details_transcription">Transcription</string>
     <string name="note_details_summary">Summary</string>
@@ -39,15 +45,49 @@
     <string name="settings_language_russian">Русский</string>
     
     <!-- Errors -->
-    <string name="error_delete">Delete error: %1$s</string>
-    <string name="error_update">Update error: %1$s</string>
+    <string name="error_no_internet">No internet connection. Please check your network.</string>
+    <string name="error_timeout">Request timed out. Please try again.</string>
+    <string name="error_api_key_missing">API key for %1$s is not configured. Go to Settings.</string>
+    <string name="error_api_unauthorized">Invalid API key. Please check your settings.</string>
+    <string name="error_api_rate_limit">Too many requests. Please wait a moment.</string>
+    <string name="error_api_server">AI service is temporarily unavailable. Try again later.</string>
     <string name="error_recording_start">Failed to start recording</string>
     <string name="error_recording_stop">Failed to stop recording</string>
-    <string name="error_processing">Processing error: %1$s</string>
-    <string name="error_network">No internet connection</string>
+    <string name="error_recording_permission">Microphone permission is required</string>
+    <string name="error_delete_failed">Failed to delete note</string>
+    <string name="error_update_failed">Failed to update note</string>
+    <string name="error_unknown">An unexpected error occurred</string>
     
     <!-- Common -->
     <string name="common_cancel">Cancel</string>
     <string name="common_save">Save</string>
     <string name="common_delete">Delete</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Welcome to VoiceNotes</string>
+    <string name="onboarding_welcome_description">Effortlessly capture thoughts with AI.\nRecord, transcribe, and summarize instantly.</string>
+    <string name="onboarding_how_title">How it Works</string>
+    <string name="onboarding_how_description">1. Tap record.\n2. Speak your mind.\n3. Get AI-powered summary and transcript.</string>
+    <string name="onboarding_api_title">Set Up AI</string>
+    <string name="onboarding_api_description">To use the app, you need an API key from Google Gemini or OpenAI.\nYour key is stored securely on your device.</string>
+    <string name="onboarding_skip">Skip for now</string>
+    <string name="onboarding_finish">Get Started</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_configure">Configure API Key</string>
+    
+    <!-- Accessibility Content Descriptions -->
+    <string name="cd_notes_list_fab_recording">Recording in progress. Tap to stop.</string>
+    <string name="cd_notes_list_fab_idle">Start recording. Tap to record a new voice note.</string>
+    <string name="cd_note_play">Play audio note</string>
+    <string name="cd_note_pause">Pause audio note</string>
+    <string name="cd_note_seek_bar">Seek audio playback</string>
+    <string name="cd_delete_note">Delete note</string>
+    <string name="cd_retry_processing">Retry processing note</string>
+    <string name="cd_settings_button">Settings</string>
+    <string name="cd_back_button">Navigate back</string>
+    <string name="cd_edit_title">Edit note title</string>
+    <string name="cd_visibility_toggle">Toggle password visibility</string>
+    <string name="cd_language_icon">Select language</string>
+    <string name="cd_provider_icon">Select AI provider</string>
+    <string name="cd_api_key_icon">API Key</string>
 </resources>

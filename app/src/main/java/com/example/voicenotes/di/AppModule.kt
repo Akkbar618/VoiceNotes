@@ -75,4 +75,12 @@ object AppModule {
     fun provideOpenAiService(openAiApi: OpenAiApi): OpenAiService {
         return OpenAiService(openAiApi)
     }
+    /**
+     * Предоставляет AudioPlayer.
+     */
+    @Provides
+    @Singleton
+    fun provideAudioPlayer(@ApplicationContext context: Context): com.example.voicenotes.util.AudioPlayer {
+        return com.example.voicenotes.util.AudioPlayer(context)
+    }
 }

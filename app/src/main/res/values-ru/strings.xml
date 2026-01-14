@@ -12,6 +12,12 @@
     <string name="notes_list_processing">Обрабатываю запись…</string>
     <string name="notes_list_delete">Удалить</string>
     
+    <!-- Note Status -->
+    <string name="note_status_processing">Обработка...</string>
+    <string name="note_status_draft">Черновик (Офлайн)</string>
+    <string name="note_status_failed">Ошибка обработки</string>
+    <string name="note_action_retry">Повторить</string>
+    
     <!-- Note Details Screen -->
     <string name="note_details_transcription">Транскрипция</string>
     <string name="note_details_summary">Саммари</string>
@@ -39,15 +45,49 @@
     <string name="settings_language_russian">Русский</string>
     
     <!-- Errors -->
-    <string name="error_delete">Ошибка удаления: %1$s</string>
-    <string name="error_update">Ошибка обновления: %1$s</string>
+    <string name="error_no_internet">Нет подключения к интернету. Проверьте сеть.</string>
+    <string name="error_timeout">Время ожидания истекло. Попробуйте снова.</string>
+    <string name="error_api_key_missing">API ключ для %1$s не настроен. Перейдите в Настройки.</string>
+    <string name="error_api_unauthorized">Неверный API ключ. Проверьте настройки.</string>
+    <string name="error_api_rate_limit">Слишком много запросов. Подождите немного.</string>
+    <string name="error_api_server">AI сервис временно недоступен. Попробуйте позже.</string>
     <string name="error_recording_start">Не удалось начать запись</string>
     <string name="error_recording_stop">Не удалось остановить запись</string>
-    <string name="error_processing">Ошибка обработки: %1$s</string>
-    <string name="error_network">Нет подключения к интернету</string>
+    <string name="error_recording_permission">Требуется разрешение на микрофон</string>
+    <string name="error_delete_failed">Не удалось удалить заметку</string>
+    <string name="error_update_failed">Не удалось обновить заметку</string>
+    <string name="error_unknown">Произошла неизвестная ошибка</string>
     
     <!-- Common -->
     <string name="common_cancel">Отмена</string>
     <string name="common_save">Сохранить</string>
     <string name="common_delete">Удалить</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Добро пожаловать</string>
+    <string name="onboarding_welcome_description">Записывайте мысли с помощью ИИ.\nЗапись, транскрипция и саммари — мгновенно.</string>
+    <string name="onboarding_how_title">Как это работает</string>
+    <string name="onboarding_how_description">1. Нажмите запись.\n2. Говорите.\n3. Получите текст и саммари от ИИ.</string>
+    <string name="onboarding_api_title">Настройка ИИ</string>
+    <string name="onboarding_api_description">Для работы нужен API ключ Google Gemini или OpenAI.\nКлюч хранится безопасно на устройстве.</string>
+    <string name="onboarding_skip">Пропустить</string>
+    <string name="onboarding_finish">Начать</string>
+    <string name="onboarding_next">Далее</string>
+    <string name="onboarding_configure">Настроить API Ключ</string>
+    
+    <!-- Accessibility Content Descriptions -->
+    <string name="cd_notes_list_fab_recording">Идет запись. Нажмите, чтобы остановить.</string>
+    <string name="cd_notes_list_fab_idle">Начать запись. Нажмите, чтобы записать новую голосовую заметку.</string>
+    <string name="cd_note_play">Воспроизвести заметку</string>
+    <string name="cd_note_pause">Пауза</string>
+    <string name="cd_note_seek_bar">Перемотка аудио</string>
+    <string name="cd_delete_note">Удалить заметку</string>
+    <string name="cd_retry_processing">Повторить обработку</string>
+    <string name="cd_settings_button">Настройки</string>
+    <string name="cd_back_button">Назад</string>
+    <string name="cd_edit_title">Редактировать заголовок</string>
+    <string name="cd_visibility_toggle">Показать/скрыть пароль</string>
+    <string name="cd_language_icon">Выбрать язык</string>
+    <string name="cd_provider_icon">Выбрать AI провайдера</string>
+    <string name="cd_api_key_icon">API Ключ</string>
 </resources>

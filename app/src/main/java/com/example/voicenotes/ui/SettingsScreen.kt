@@ -103,7 +103,8 @@ fun SettingsScreen(
     onBackClick: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val userPreferences by viewModel.userPreferences.collectAsState()
+    val userPreferencesState by viewModel.userPreferences.collectAsState()
+    val userPreferences = userPreferencesState ?: return
     
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showProviderDialog by remember { mutableStateOf(false) }
@@ -382,7 +383,7 @@ fun ApiKeyInputDialog(
                                 Icons.Default.VisibilityOff 
                             else 
                                 Icons.Default.Visibility,
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.cd_visibility_toggle)
                         )
                     }
                 },

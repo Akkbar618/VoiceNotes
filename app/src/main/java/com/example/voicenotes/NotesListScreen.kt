@@ -5,17 +5,24 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -23,6 +30,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,13 +59,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.voicenotes.util.ErrorHandler
+import com.example.voicenotes.data.NoteStatus
 import java.io.File
 
 /**
@@ -66,8 +83,10 @@ import java.io.File
 fun NoteListCard(
     note: NoteUi,
     onClick: () -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -106,6 +125,68 @@ fun NoteListCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+
+            // Статус (если не SYNCED)
+            if (note.status != NoteStatus.SYNCED) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    when (note.status) {
+                        NoteStatus.PROCESSING -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.note_status_processing),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        NoteStatus.DRAFT -> {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = stringResource(R.string.note_status_draft),
+                                modifier = Modifier.size(16.dp),
+                                tint = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.note_status_draft),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
+                        NoteStatus.FAILED -> {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = stringResource(R.string.note_status_failed),
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.note_status_failed),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            androidx.compose.material3.Button(
+                                onClick = onRetry,
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp).semantics { 
+                                    contentDescription = context.getString(R.string.cd_retry_processing) 
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text(stringResource(R.string.note_action_retry), style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            }
         }
     }
 }
@@ -120,6 +201,7 @@ fun SwipeableNoteCard(
     note: NoteUi,
     onClick: () -> Unit,
     onDelete: () -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
@@ -153,7 +235,7 @@ fun SwipeableNoteCard(
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Удалить",
+                        contentDescription = stringResource(R.string.cd_delete_note),
                         modifier = Modifier.padding(end = 24.dp),
                         tint = MaterialTheme.colorScheme.onErrorContainer
                     )
@@ -164,7 +246,7 @@ fun SwipeableNoteCard(
         enableDismissFromEndToStart = true,
         modifier = modifier
     ) {
-        NoteListCard(note = note, onClick = onClick)
+        NoteListCard(note = note, onClick = onClick, onRetry = onRetry)
     }
 }
 
@@ -227,8 +309,9 @@ fun NotesListScreen(
     // Показываем Snackbar при ошибке (Short duration)
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
+            val message = ErrorHandler.getLocalizedMessage(context, error)
             snackbarHostState.showSnackbar(
-                message = error,
+                message = message,
                 duration = SnackbarDuration.Short
             )
             viewModel.clearError()
@@ -244,9 +327,14 @@ fun NotesListScreen(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+
     // Функция для обработки нажатия на кнопку записи
     fun onRecordClick() {
         if (uiState.isLoading) return
+        
+        // Тактильная отдача
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         
         if (uiState.isRecording) {
             viewModel.stopRecording()
@@ -280,7 +368,7 @@ fun NotesListScreen(
                         IconButton(onClick = onSettingsClick) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
-                                contentDescription = stringResource(R.string.settings_title),
+                                contentDescription = stringResource(R.string.cd_settings_button),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -293,9 +381,25 @@ fun NotesListScreen(
             },
             floatingActionButton = {
                 if (!uiState.isLoading) {
+                    // Анимация пульсации при записи
+                    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                    val scale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = if (uiState.isRecording) 1.2f else 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "scale"
+                    )
+
                     // Large FAB для обоих режимов (96dp)
                     LargeFloatingActionButton(
                         onClick = { onRecordClick() },
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = if (uiState.isRecording) scale else 1f
+                            scaleY = if (uiState.isRecording) scale else 1f
+                        },
                         containerColor = if (uiState.isRecording) 
                             MaterialTheme.colorScheme.errorContainer 
                         else 
@@ -308,7 +412,7 @@ fun NotesListScreen(
                         Icon(
                             imageVector = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
                             contentDescription = stringResource(
-                                if (uiState.isRecording) R.string.notes_list_fab_stop else R.string.notes_list_fab_record
+                                if (uiState.isRecording) R.string.cd_notes_list_fab_recording else R.string.cd_notes_list_fab_idle
                             ),
                             modifier = Modifier.size(36.dp)
                         )
@@ -335,6 +439,7 @@ fun NotesListScreen(
                             note = note,
                             onClick = { onNoteClick(note.id) },
                             onDelete = { viewModel.deleteNote(note.id) },
+                            onRetry = { viewModel.retryNote(note) },
                             modifier = Modifier.animateItem()
                         )
                     }
